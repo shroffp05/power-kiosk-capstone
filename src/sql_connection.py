@@ -27,18 +27,7 @@ class connect_to_sql:
 
 	def _execute_sql_statement(self, sql_statement):
 
-		#self.cursor.execute(sql_statement)
 		df = pd.read_sql(sql_statement, self.conn)
-		return df #self.cursor.fetchall()
+		return df 
 
-
-
-
-if __name__=="__main__":
-
-	sql_statement = "SELECT TOP 2 * FROM contractLocation"
-
-	sql_con = connect_to_sql()
-	sql_con._sql_connection()
-	print(sql_con._execute_sql_statement(sql_statement))
 	
