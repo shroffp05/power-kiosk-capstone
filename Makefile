@@ -1,25 +1,27 @@
-.PHONY: notebook docs
-.EXPORT_ALL_VARIABLES:
-INSTALL_STAMP := .install.stamp
-POETRY := ${HOME}/poetry/bin/poetry
+.PHONY: install
+PY3 := $(shell command -v python3 2> /dev/null)
+CONDA := $(shell conda info --base)
 
-install_poetry:
-	@echo "Installing poetry..."
-	@curl -sSL https://install.python-poetry.org | POETRY_HOME=${HOME}/poetry python3 - 
+SITE_PACKAGES := $(shell pip show pip | grep '^Location' | cut -f2 -d':')
 
-install: 
-	@echo "Installing..."
-	$(POETRY) install
-	$(POETRY) run pre-commit install
+conda_create:
+	@echo "Checking if python3 is installed"
+	@if [ -z $(PY3) ]; then echo "Python 3 could not be found."; exit 2; fi
+	@echo "Creating a conda environment"
+	conda create --name power_kiosk python=3.9 pip
 
-activate:
-	@echo "Activating virtual environment"
-	$(POETRY) shell
+install: $(SITE_PACKAGES) requirements.txt
+	@echo "Installing all packages"
+	conda install -c conda-forge -c pytorch u8darts-all
+	$(CONDA)/envs/power_kiosk/bin/pip install -r requirements.txt 
+
+setup_git:
+	@echo "Setting up git"
+	git init 
+	pre-commit install
 
 pull_data:
-	$(POETRY) run dvc pull
-
-setup: install_poetry activate
+	dvc pull
 
 test:
 	pytest
