@@ -14,11 +14,7 @@ install: $(SITE_PACKAGES) requirements.txt
 	@echo "Installing all packages"
 	conda install -c conda-forge -c pytorch u8darts-all
 	$(CONDA)/envs/power_kiosk/bin/pip install -r requirements.txt 
-
-setup_git:
-	@echo "Setting up git"
-	git init 
-	pre-commit install
+	pre-commit install 
 
 pull_data:
 	dvc pull
