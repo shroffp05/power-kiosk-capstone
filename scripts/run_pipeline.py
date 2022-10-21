@@ -4,13 +4,15 @@ import sys
 import os 
 from six import string_types
 from copy import deepcopy 
+from darts import TimeSeries 
+
 
 current_path = os.getcwd() 
 
 sys.path.insert(0, current_path+"/src")
 
 from sql_connection import connect_to_sql
-
+from modelling import modeling 
 
 def set_param(user_arg: str) -> dict:
     
@@ -83,7 +85,12 @@ if __name__ == "__main__":
     conn._sql_connection()
     results_df = conn._execute_sql_statement(sql_string)
 
-    print(results_df.head())
+    series = TimeSeries.from_dataframe(results_df, 'NewPeriod', 'usage')
+
+    model = modeling(series=series)
+    model._modeling 
+
+    print(model.model_metrics)
 
 
     
