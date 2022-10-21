@@ -1,0 +1,65 @@
+WITH temp AS (
+     SELECT distinct
+          ccl.contractNum
+          ,RANK() OVER (PARTITION BY accountUsages.id ORDER BY ccl.contractAddDate DESC ,ccl.locationAddDate DESC ,ccl.contractLocationId) AS 'cRank'
+          ,ccl.contractLocationID
+          ,ccl.[status]
+          ,ccl.city 
+          ,ccl.stateID
+          ,[accountUsages].[id]
+          ,[accountUsages].[utilityAccountNum]
+          ,[accountUsages].[utilityId]
+          ,[accountUsages].[serviceTypeId]
+          ,[accountUsages].[usage]
+          ,[accountUsages].[demand]
+          ,[accountUsages].[plc]
+          ,[accountUsages].[networkPlc]
+          ,[accountUsages].[loadProfile]
+          ,CASE WHEN DATEDIFF(MONTH,meterStartDate,meterEndDate) = 2
+                THEN DATEFROMPARTS(YEAR(DATEADD(MONTH,1,meterStartDate)),MONTH(DATEADD(MONTH,1,meterStartDate)),1)
+           ELSE 
+               CASE WHEN DATEDIFF(MONTH,meterStartDate,meterEndDate) = 1
+                    THEN 
+                         CASE WHEN DATEDIFF(DAY,meterStartDate,EOMONTH(meterStartDate)) >= DATEDIFF(DAY,DATEFROMPARTS(YEAR(meterEndDate),MONTH(meterEndDate),1),meterEndDate)
+                              THEN DATEFROMPARTS(YEAR(meterStartDate),MONTH(meterStartDate),1)
+                              ELSE DATEFROMPARTS(YEAR(meterEndDate),MONTH(meterEndDate),1)
+                         END
+                    ELSE 
+                         CASE WHEN DATEDIFF(MONTH,meterStartDate,meterEndDate) = 0
+                              THEN DATEFROMPARTS(YEAR(meterStartDate),MONTH(meterStartDate),1)
+                              ELSE NULL
+                         END
+               END
+          END AS 'NewPeriod'
+          ,[accountUsages].[meterStartDate]
+          ,[accountUsages].[meterEndDate]
+          ,[accountUsages].[addDate]
+          ,[accountUsages].[usageUuid]
+     FROM [PowerKioskReport].[dbo].[accountUsages]
+     LEFT JOIN (
+               SELECT 
+                    contractNum
+                    ,[contract].contractID
+                    ,[status]
+                    ,displayStatus
+                    ,[contract].addDate AS 'contractAddDate'
+                    ,confirmationDate
+                    ,effectiveDate
+                    ,expirationDate
+                    ,utilityAccountNum
+                    ,utilityId
+                    ,serviceTypeId
+                    ,contractLocationId
+                    ,contractLocation.addDate AS 'locationAddDate'
+                    ,city 
+                    ,contractLocation.stateID 
+                    ,contract.customerID
+                    FROM contractLocation
+                    LEFT JOIN [contract] ON [contract].contractID = contractLocation.contractid
+               ) ccl
+          ON ccl.utilityAccountNum = accountUsages.utilityAccountNum AND ccl.utilityID=accountUsages.utilityId AND ccl.serviceTypeID = accountUsages.serviceTypeId
+)
+SELECT *
+FROM temp
+WHERE cRank = 1
+AND contractLocationID IN ({{contract_location_id}})
