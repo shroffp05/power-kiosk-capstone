@@ -1,12 +1,9 @@
-
-
-# import hydra
-# from omegaconf import DictConfig
-# from hydra.utils import to_absolute_path as abspath
 import argparse
 from jinjasql import JinjaSql 
 import sys 
 import os 
+from six import string_types
+from copy import deepcopy 
 
 current_path = os.getcwd() 
 
@@ -14,17 +11,6 @@ sys.path.insert(0, current_path+"/src")
 
 from sql_connection import connect_to_sql
 
-"""
-@hydra.main(config_path="../config", config_name="main")
-def train_model(config: DictConfig):
-
-    input_path = abspath(config.processed.path)
-    output_path = abspath(config.final.path)
-
-    print(f"Train modeling using {input_path}")
-    print(f"Model used: {config.model.name}")
-    print(f"Save the output to {output_path}")
-"""
 
 def set_param(user_arg: str) -> dict:
     
@@ -38,15 +24,35 @@ def set_param(user_arg: str) -> dict:
     return params
 
 
+def quote_sql_string(value):
+    """
+    If `value` is a string type, escapes single quotes in the string
+    and returns the string enclosed in single quotes.
+    """
+    if isinstance(value, string_types):
+        new_value = str(value)
+        new_value = new_value.replace("'", "''")
+        return "'{}'".format(new_value)
+    return value
+
+
 def apply_sql_template(template: str, parameters: dict) -> str:
 
     """
     Apply a JinjaSql template (string) substituting parameters (dict) and return the final SQL.
     """
-
+    
     j = JinjaSql(param_style='pyformat')
     query, bind_params = j.prepare_query(template, parameters)
-    return query%bind_params
+
+    if not bind_params:
+        return query
+    params = deepcopy(bind_params)
+
+    for key, val in params.items():
+        params[key] = quote_sql_string(val)
+
+    return query%params
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Pass a contract location ID")
@@ -63,7 +69,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(args.cl)
+    print("Arguments Passes: {}".format(args.cl))
 
     contract_location_ids = []
 
