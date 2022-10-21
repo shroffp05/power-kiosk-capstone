@@ -13,6 +13,7 @@ sys.path.insert(0, current_path+"/src")
 
 from sql_connection import connect_to_sql
 from modelling import modeling 
+from data_preprocessing import clean_data 
 
 def set_param(user_arg: str) -> dict:
     
@@ -71,7 +72,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print("Arguments Passes: {}".format(args.cl))
+    print("Arguments Passed: {}".format(args.cl))
 
     contract_location_ids = []
 
@@ -84,13 +85,15 @@ if __name__ == "__main__":
     conn = connect_to_sql()
     conn._sql_connection()
     results_df = conn._execute_sql_statement(sql_string)
+    results_df["period"] = results_df["NewPeriod"].astype(str)
 
-    series = TimeSeries.from_dataframe(results_df, 'NewPeriod', 'usage')
+    df = clean_data(results_df)
+    series = TimeSeries.from_dataframe(df, 'period_clean', 'clean_usage', fill_missing_dates=True, freq=None)
 
     model = modeling(series=series)
-    model._modeling 
-
-    print(model.model_metrics)
+    results = model._modeling()
+    print(results)
+    
 
 
     
