@@ -83,6 +83,15 @@ git commit -m 'commit-message'
 git push origin <branch>
 ```
 
+## Run Streamlit to visualize output
+
+To launch the streamlit app locally, run: 
+
+```bash
+streamlit run src/build_streamlit.py
+```
+
+
 # Auto-generate API documentation
 
 To auto-generate API document for your project, run:
@@ -91,11 +100,5 @@ To auto-generate API document for your project, run:
 make docs
 ```
 
-# Run Streamlit to visualize output
 
-To launch the streamlit app locally, run: 
-
-```bash
-streamlit run src/build_streamlit.py
-```
 
