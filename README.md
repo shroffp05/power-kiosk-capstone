@@ -90,3 +90,12 @@ To auto-generate API document for your project, run:
 ```bash
 make docs
 ```
+
+# Run Streamlit to visualize output
+
+To launch the streamlit app locally, run: 
+
+```bash
+streamlit run src/build_streamlit.py
+```
+
