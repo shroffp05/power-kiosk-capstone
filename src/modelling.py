@@ -19,6 +19,7 @@ from typing import Dict
 
 arr = np.array([(1, 10),(2,20),(3,30),(4,40),(5,50)])
 
+
 @dataclass
 class modeling:
 
@@ -45,3 +46,6 @@ class modeling:
                                 forecast_horizon=1,metric = mape, reduction=np.median)# change forecasting horizon to 1 so it increments by 1
         
         return backtests
+
+
+        

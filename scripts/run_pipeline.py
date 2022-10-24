@@ -5,7 +5,9 @@ import os
 from six import string_types
 from copy import deepcopy 
 from darts import TimeSeries 
-
+import dateutil.relativedelta
+import pandas as pd 
+import numpy as np 
 
 current_path = os.getcwd() 
 
@@ -57,6 +59,22 @@ def apply_sql_template(template: str, parameters: dict) -> str:
 
     return query%params
 
+
+def get_client_metrics(df: pd.DataFrame) -> float:
+
+    end_date = df['period_clean'].max().to_pydatetime()
+    start_date = end_date - dateutil.relativedelta.relativedelta(months=12)
+
+    filter_df = df.loc[(df['period_clean']>=start_date) & (df['period_clean']<=end_date), :]
+
+    print("Start Date: {}".format(start_date))
+    print("End Date: {}".format(end_date))
+
+    return filter_df["clean_usage"].sum()/12
+
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Pass a contract location ID")
 
@@ -88,10 +106,12 @@ if __name__ == "__main__":
     results_df["period"] = results_df["NewPeriod"].astype(str)
 
     df = clean_data(results_df)
+
     series = TimeSeries.from_dataframe(df, 'period_clean', 'clean_usage', fill_missing_dates=True, freq=None)
 
     model = modeling(series=series)
     results = model._modeling()
+    results["client_forecast"] = get_client_metrics(df)
     print(results)
     
 
