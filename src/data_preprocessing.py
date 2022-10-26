@@ -15,6 +15,7 @@ from statsmodels.tsa.stattools import adfuller
 
 def clean_data(df):
     # list of unique contract locations
+
     unique_ids = df.contractLocationID.unique()
 
     # drop all columns that are not relevant
@@ -74,6 +75,11 @@ def clean_data(df):
 
         df_reindex["stationarity_flag"] = cl_stationarity
         df_reindex["yearly_seasonality"] = cl_seasonal_yearly
+
+        df_reindex["data_thresh_achieved"] = check_data_length(
+            df_reindex["clean_usage"]
+        )
+
         clean_df = df_reindex[
             [
                 "contractLocationID",
@@ -81,6 +87,7 @@ def clean_data(df):
                 "clean_usage",
                 "stationarity_flag",
                 "yearly_seasonality",
+                "data_thresh_achieved",
             ]
         ]
 
@@ -117,3 +124,14 @@ def get_flags(ser):
     if p_value <= 0.05:
         seasonal = True
     return stat, seasonal
+
+
+def check_data_length(ser):
+    if len(ser) >= 35:
+        return 1
+    else:
+        return 0
+
+
+if __name__ == "__main__":
+    clean_data()
