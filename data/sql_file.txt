@@ -63,3 +63,4 @@ SELECT *
 FROM temp
 WHERE cRank = 1
 AND contractLocationID IN ({{contract_location_id}})
+AND NewPeriod IS NOT NULL

@@ -29,7 +29,7 @@ def clean_data(df):
 
     # initialize output dataframe
     out_df = pd.DataFrame()
-
+    count = 1
     # loop through unique contracts
     for u_id in unique_ids:
 
@@ -70,13 +70,16 @@ def clean_data(df):
         df_reindex = df_reindex.drop(["period"], axis=1)
 
         # get seasonality and stationarity flags
-        cl_series = df_reindex["clean_usage"]
-        cl_stationarity, cl_seasonal_yearly = get_flags(cl_series)
 
-        df_reindex["stationarity_flag"] = cl_stationarity
-        df_reindex["yearly_seasonality"] = cl_seasonal_yearly
+        # cl_stationarity, cl_seasonal_yearly = get_flags(cl_series)
+
+        # df_reindex["stationarity_flag"] = cl_stationarity
+        # df_reindex["yearly_seasonality"] = cl_seasonal_yearly
 
         df_reindex["data_thresh_achieved"] = check_data_length(
+            df_reindex["clean_usage"]
+        )
+        df_reindex["has_zero_usage_values"] = check_zero_usage(
             df_reindex["clean_usage"]
         )
 
@@ -85,14 +88,15 @@ def clean_data(df):
                 "contractLocationID",
                 "period_clean",
                 "clean_usage",
-                "stationarity_flag",
-                "yearly_seasonality",
                 "data_thresh_achieved",
+                "has_zero_usage_values",
             ]
         ]
 
-        out_df = out_df.append(clean_df)
-
+        # out_df = out_df.append(clean_df)
+        out_df = pd.concat([out_df, clean_df])
+        print("%d Contract Location ID's have been cleaned and added" % count)
+        count = count + 1
     return out_df
 
 
@@ -128,6 +132,13 @@ def get_flags(ser):
 
 def check_data_length(ser):
     if len(ser) >= 35:
+        return 1
+    else:
+        return 0
+
+
+def check_zero_usage(ser):
+    if 0 in ser.values:
         return 1
     else:
         return 0
