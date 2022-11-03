@@ -75,10 +75,14 @@ def clean_data(df):
 
         # df_reindex["stationarity_flag"] = cl_stationarity
         # df_reindex["yearly_seasonality"] = cl_seasonal_yearly
-
+        """
         df_reindex["data_thresh_achieved"] = check_data_length(
             df_reindex["clean_usage"]
         )
+        """
+        df_reindex["series_len"] = [
+            df_reindex.shape[0] for i in range(df_reindex.shape[0])
+        ]
         df_reindex["has_zero_usage_values"] = check_zero_usage(
             df_reindex["clean_usage"]
         )

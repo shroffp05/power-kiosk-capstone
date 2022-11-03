@@ -12,13 +12,15 @@ import sqlalchemy as sal
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
+driver = pyodbc.drivers()[0]
+
 
 @dataclass
 class connect_to_sql:
 
     server: str = "evprodsql01.powerkiosk.com"
     database: str = "PowerKiosk"
-    driver: str = "ODBC Driver 17 for SQL Server"
+    driver: str = driver
     servercert: str = "Yes"
     username: str = "priyank.shroff"
     password: str = "UUFAIj3!L2Du"

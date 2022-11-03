@@ -125,7 +125,9 @@ def get_client_metrics(df: pd.DataFrame) -> list:
     ]  # Assuming we have atleast 24 months data
 
 
-def get_forecast_metrics(ids: list, df: pd.DataFrame) -> dict:
+def get_forecast_metrics(
+    ids: list, df: pd.DataFrame, forecast_period: int
+) -> dict:
 
     """
     Function loops through each contract location ID in `ids` and filters the dataframe for that ID
@@ -154,7 +156,9 @@ def get_forecast_metrics(ids: list, df: pd.DataFrame) -> dict:
             )
         )
 
-        model = modeling(series=series, contractLocationID=id)
+        model = modeling(
+            series=series, contractLocationID=id, pred_interval=forecast_period
+        )
         model._modeling()
         future_pred = model.future_predictions
         model_name = model.model_name
@@ -261,9 +265,25 @@ if __name__ == "__main__":
             """,
     )
 
+    parser.add_argument(
+        "--p",
+        type=int,
+        default=12,
+        help="""
+            Type the number of months you want to predict for. Defaults to 12.
+        """,
+    )
+
     args = parser.parse_args()
 
-    print("Arguments Passed: {}".format(args.cl))
+    print(
+        """Arguments Passed:
+                - Contract Location ID : {}
+                - Number of forecast periods: {}
+            """.format(
+            args.cl, args.p
+        )
+    )
 
     contract_location_ids = []
 
@@ -286,7 +306,7 @@ if __name__ == "__main__":
     # df.to_csv('cleaned_database.csv')
     unique_clocid = df["contractLocationID"].unique().tolist()
 
-    output = get_forecast_metrics(unique_clocid, df)
+    output = get_forecast_metrics(unique_clocid, df, int(args.p))
     # print(output)
 
     output.to_csv("predictions_10-28.csv")
