@@ -3,7 +3,7 @@ import math
 import numbers
 import sys
 import time
-
+from darts.utils.statistics import check_seasonality
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,9 +11,12 @@ from darts import TimeSeries
 from scipy import signal
 from scipy.stats import kruskal
 from statsmodels.tsa.stattools import adfuller
-
+import pmdarima as pmd
+# flake8: noqa
 
 def clean_data(df):
+    
+
     # list of unique contract locations
 
     unique_ids = df.contractLocationID.unique()
@@ -32,7 +35,7 @@ def clean_data(df):
     count = 1
     # loop through unique contracts
     for u_id in unique_ids:
-
+        ALPHA = 0.05
         sub_df = df[df["contractLocationID"] == u_id]
         # drop duplicates due to multiple pulls
         sub_df = sub_df.sort_values(
@@ -69,19 +72,29 @@ def clean_data(df):
         df_reindex["period_clean"] = pd.to_datetime(df_reindex["index"])
         df_reindex = df_reindex.drop(["period"], axis=1)
 
-        # get seasonality and stationarity flags
-
-        # cl_stationarity, cl_seasonal_yearly = get_flags(cl_series)
-
-        # df_reindex["stationarity_flag"] = cl_stationarity
-        # df_reindex["yearly_seasonality"] = cl_seasonal_yearly
-
         df_reindex["data_thresh_achieved"] = check_data_length(
             df_reindex["clean_usage"]
         )
         df_reindex["has_zero_usage_values"] = check_zero_usage(
             df_reindex["clean_usage"]
         )
+
+        ts = get_TS(df_reindex)
+
+        is_seasonal, mseas = seasonality_check(ts)
+
+        y = np.asarray(df_reindex['clean_usage'])
+        n_kpss = pmd.arima.ndiffs(y, alpha=ALPHA, test='kpss', max_d=2)
+        n_adf = pmd.arima.ndiffs(y, alpha=ALPHA, test='adf', max_d=2)
+        n_diff = max(n_adf, n_kpss)
+        
+        n_ocsb = pmd.arima.OCSBTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y)
+        n_ch = pmd.arima.CHTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y)
+        ns_diff = max(n_ocsb, n_ch, is_seasonal * 1)
+        df_reindex['seasonality_flag']= is_seasonal
+        df_reindex['number_seasons']= mseas
+        df_reindex['first_diff']= n_diff
+        df_reindex['seasonal_diff']= ns_diff
 
         clean_df = df_reindex[
             [
@@ -90,10 +103,14 @@ def clean_data(df):
                 "clean_usage",
                 "data_thresh_achieved",
                 "has_zero_usage_values",
+                "seasonality_flag",
+                "number_seasons",
+                "first_diff",
+                "seasonal_diff"
+
             ]
         ]
 
-        # out_df = out_df.append(clean_df)
         out_df = pd.concat([out_df, clean_df])
         print("%d Contract Location ID's have been cleaned and added" % count)
         count = count + 1
@@ -102,16 +119,15 @@ def clean_data(df):
 
 def get_TS(df):
 
-    ts_df = TimeSeries.from_group_dataframe(
+    ts = TimeSeries.from_dataframe(
         df,
-        "contractLocationID",
-        time_col="period_ts",
-        value_cols="usage",
+        "period_clean",
+        "clean_usage",
         fill_missing_dates=True,
-        freq="MS",
+        freq=None,
     )
 
-    return ts_df
+    return ts
 
 
 def get_flags(ser):
@@ -142,3 +158,13 @@ def check_zero_usage(ser):
         return 1
     else:
         return 0
+
+
+def seasonality_check(ser):
+    ALPHA = 0.05
+    for m in range(2, 25):
+        is_seasonal, mseas = check_seasonality(ser, m=m, alpha=ALPHA)
+        if is_seasonal:
+            break
+
+    return is_seasonal, mseas
