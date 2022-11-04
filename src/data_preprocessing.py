@@ -72,9 +72,20 @@ def clean_data(df):
         df_reindex["period_clean"] = pd.to_datetime(df_reindex["index"])
         df_reindex = df_reindex.drop(["period"], axis=1)
 
+        # get seasonality and stationarity flags
+
+        # cl_stationarity, cl_seasonal_yearly = get_flags(cl_series)
+
+        # df_reindex["stationarity_flag"] = cl_stationarity
+        # df_reindex["yearly_seasonality"] = cl_seasonal_yearly
+        """
         df_reindex["data_thresh_achieved"] = check_data_length(
             df_reindex["clean_usage"]
         )
+        """
+        df_reindex["series_len"] = [
+            df_reindex.shape[0] for i in range(df_reindex.shape[0])
+        ]
         df_reindex["has_zero_usage_values"] = check_zero_usage(
             df_reindex["clean_usage"]
         )
@@ -101,7 +112,7 @@ def clean_data(df):
                 "contractLocationID",
                 "period_clean",
                 "clean_usage",
-                "data_thresh_achieved",
+     
                 "has_zero_usage_values",
                 "seasonality_flag",
                 "number_seasons",
