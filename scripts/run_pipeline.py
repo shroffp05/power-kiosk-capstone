@@ -3,7 +3,7 @@ import os
 import sys
 from copy import deepcopy
 from datetime import timedelta
-
+from datetime import datetime  
 import dateutil.relativedelta
 import numpy as np
 import pandas as pd
@@ -299,14 +299,14 @@ if __name__ == "__main__":
     results_df["period"] = results_df["NewPeriod"].astype(str)
     # print(results_df)
     df = clean_data(results_df)
-
-    df = df[
-        (df["data_thresh_achieved"] == 1) & (df["has_zero_usage_values"] == 0)
-    ]
+    
+    df = df[df["has_zero_usage_values"] == 0]
+    
     # df.to_csv('cleaned_database.csv')
     unique_clocid = df["contractLocationID"].unique().tolist()
 
     output = get_forecast_metrics(unique_clocid, df, int(args.p))
     # print(output)
-
-    output.to_csv("predictions_10-28.csv")
+    time_stamp = datetime.now() 
+    output.to_csv("results/predictions-{}.csv".format(time_stamp))
+    

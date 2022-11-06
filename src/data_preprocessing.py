@@ -91,7 +91,7 @@ def clean_data(df):
         )
 
         ts = get_TS(df_reindex)
-
+        
         is_seasonal, mseas = seasonality_check(ts)
 
         y = np.asarray(df_reindex['clean_usage'])
@@ -102,28 +102,30 @@ def clean_data(df):
         n_ocsb = pmd.arima.OCSBTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y)
         n_ch = pmd.arima.CHTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y)
         ns_diff = max(n_ocsb, n_ch, is_seasonal * 1)
+
         df_reindex['seasonality_flag']= is_seasonal
         df_reindex['number_seasons']= mseas
         df_reindex['first_diff']= n_diff
         df_reindex['seasonal_diff']= ns_diff
 
+    
         clean_df = df_reindex[
             [
                 "contractLocationID",
                 "period_clean",
                 "clean_usage",
-     
                 "has_zero_usage_values",
                 "seasonality_flag",
                 "number_seasons",
                 "first_diff",
-                "seasonal_diff"
-
+                "seasonal_diff",
+                "series_len",
             ]
         ]
 
         out_df = pd.concat([out_df, clean_df])
-        print("%d Contract Location ID's have been cleaned and added" % count)
+        
+        #print("%d Contract Location ID's have been cleaned and added" % count)
         count = count + 1
     return out_df
 

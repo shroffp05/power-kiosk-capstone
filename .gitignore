@@ -92,3 +92,7 @@ target/
 
 # Hydra logs
 outputs
+
+# Folders
+logging/
+results/
