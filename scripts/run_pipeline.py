@@ -155,9 +155,11 @@ def get_forecast_metrics(
                 series.start_time(), series.end_time()
             )
         )
+        n_diff, ns_diff =  filter_df["first_diff"].iloc[0], filter_df["seasonal_diff"].iloc[0]
+        seasonality, no_of_seasons = filter_df["seasonality_flag"].iloc[0], filter_df["number_seasons"].iloc[0]
 
         model = modeling(
-            series=series, contractLocationID=id, pred_interval=forecast_period
+            series=series, contractLocationID=id, pred_interval=forecast_period, ts_attributes=(n_diff, ns_diff, seasonality, no_of_seasons)
         )
         model._modeling()
         future_pred = model.future_predictions
@@ -300,7 +302,7 @@ if __name__ == "__main__":
     # print(results_df)
     df = clean_data(results_df)
     
-    df = df[df["has_zero_usage_values"] == 0]
+    #df = df[df["has_zero_usage_values"] == 0]
     
     # df.to_csv('cleaned_database.csv')
     unique_clocid = df["contractLocationID"].unique().tolist()

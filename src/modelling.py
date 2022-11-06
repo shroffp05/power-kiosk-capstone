@@ -8,45 +8,51 @@ from darts import TimeSeries
 from darts.metrics import mae, mape, mase, mse, ope, r2_score, rmse, rmsle
 from darts.models import (ARIMA, AutoARIMA, ExponentialSmoothing, NaiveDrift,
                           NaiveSeasonal, Prophet)
-from darts.utils.statistics import check_seasonality
-
-ALPHA = 0.05
+from darts.utils.utils import ModelMode, SeasonalityMode
 
 arr = np.array([(1, 10), (2, 20), (3, 30), (4, 40), (5, 50)])
 metrics = np.array(
     [("1234", "1/1/2020", 1000, 20, 10, "arima", 12.3, 2.2, "null")]
 )
 
+def model_check(mod_name: str, series: TimeSeries, seasonal_period: int) -> bool:
 
-def seasonality_check(ts: TimeSeries):
+    if mod_name == 'arima':
+        if series.n_timesteps < 36:
+            return False 
+        else:
+            return True 
+    elif mod_name == 'exponential':
+        if seasonal_period < 2:
+            return False 
+        else:
+            return True 
+    elif mod_name == 'prophet':
+        if series.n_samples < 18:
+            return False 
+        else:
+            return True 
 
-    for m in range(2, 25):
-        is_seasonal, mseas = check_seasonality(ts, m=m, alpha=ALPHA)
-        if is_seasonal:
-            break
+    
 
-    return is_seasonal, mseas
+def arima_hyperparameter_update(param_grid: dict, parameters: set) -> dict:
 
+    n_diff = parameters[0]
+    ns_diff = parameters[1]
+    no_of_periods = parameters[3]
 
-def differencing(ts: TimeSeries):
+    param_grid["d"]=[int(n_diff)]
 
-    is_seasonal, mseas = seasonality_check(ts)
+    if parameters[2]:
+        seasonal_order = []
+        for P in range(1,4):
+            for Q in range(1,4):
+                s_order = [P, ns_diff, Q, 12]
+                seasonal_order.append(s_order)
 
-    n_kpss = pmd.arima.ndiffs(ts, alpha=ALPHA, test="kpss", max_d=2)
-    n_adf = pmd.arima.ndiffs(ts, alpha=ALPHA, test="adf", max_d=2)
-    n_diff = max(n_adf, n_kpss)
+        param_grid["seasonal_order"] = seasonal_order
 
-    # get order of seasonal differencing: the higher of OCSB and CH test results
-    n_ocsb = pmd.arima.OCSBTest(
-        m=max(4, mseas)
-    ).estimate_seasonal_differencing_term(ts)
-    n_ch = pmd.arima.CHTest(
-        m=max(4, mseas)
-    ).estimate_seasonal_differencing_term(ts)
-    ns_diff = max(n_ocsb, n_ch, is_seasonal * 1)
-
-    return is_seasonal, mseas, n_diff, ns_diff
-
+    return param_grid
 
 @dataclass
 class modeling:
@@ -55,14 +61,15 @@ class modeling:
     models_dict: Dict[str, str] = field(
         default_factory=lambda: {"arima": ARIMA()}
     )
-    # is_seasonal, mseas, n_diff, ns_diff = differencing(self.series)
     model_hyperparameters: Dict[str, str] = field(
         default_factory=lambda: {
-            "arima": {"p": [0, 1, 2, 3, 4], "d": [1], "q": [0, 1, 2, 3, 4]}
+            "arima": {"p": [0, 1, 2, 3, 4], "d": [0], "q": [0, 1, 2, 3, 4]}
         }
+        
     )
     pred_interval: int = 12
     contractLocationID: str = ""
+    ts_attributes: set = ()
 
     def _modeling(self):
 
@@ -75,36 +82,42 @@ class modeling:
         ):  # mod is key and instantiation is the value (model)
 
             print(mod, mod_instantiation)
+            
+            if model_check(mod, self.series, self.ts_attributes[3]):
+                if mod == 'arima':
+                    param_grid = arima_hyperparameter_update(self.model_hyperparameters[mod], self.ts_attributes)
+                else:
+                    param_grid = self.model_hyperparameters[mod]
 
-            param_grid = self.model_hyperparameters[mod]
-            print(param_grid)
-            model, params, score = mod_instantiation.gridsearch(
-                parameters=param_grid,
-                series=self.series,
-                forecast_horizon=1,
-                start=0.9,
-                metric=mape,
-                reduction=np.median,
-                verbose=True,
-            )
+                print(param_grid)
 
-            if len(self.model_metrics) == 0:
-                self.model_metrics[mod] = {
-                    "model": model,
-                    "params": params,
-                    "score": score,
-                }
-            else:
-                for k, v in self.model_metrics.items():
-                    current_val = self.model_metrics[k]["score"]
+                model, params, score = mod_instantiation.gridsearch(
+                    parameters=param_grid,
+                    series=self.series,
+                    forecast_horizon=1,
+                    start=0.9,
+                    metric=mape,
+                    reduction=np.median,
+                    verbose=True,
+                )
 
-                if current_val < score:
-                    self.model_metrics = {}
+                if len(self.model_metrics) == 0:
                     self.model_metrics[mod] = {
                         "model": model,
                         "params": params,
                         "score": score,
                     }
+                else:
+                    for k, v in self.model_metrics.items():
+                        current_val = self.model_metrics[k]["score"]
+
+                    if current_val < score:
+                        self.model_metrics = {}
+                        self.model_metrics[mod] = {
+                            "model": model,
+                            "params": params,
+                            "score": score,
+                        }
 
         (
             self.future_predictions,
