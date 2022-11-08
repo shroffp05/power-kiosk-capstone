@@ -166,21 +166,31 @@ def get_forecast_metrics(
         model_name = model.model_name
         pred_val = model.pred_val
         pred_score = model.pred_score
+        val_size = model.val_size
 
-        future_conf_int = future_pred.quantiles_df((0.05, 0.95))
-        pred_conf_int = pred_val.quantiles_df((0.05, 0.95))
+        if len(model.predictions_conf_interval) == 0:
+            future_conf_int = future_pred.quantiles_df((0.05, 0.95))
+        else:
+            future_conf_int = pd.DataFrame(model.predictions_conf_interval, columns=['clean_usage_0.05', 'clean_usage_0.95'])
 
-        contract_location_id = [id for i in range(model.pred_interval + 5)]
+        if len(model.conf_interval) == 0:
+            pred_conf_int = pred_val.quantiles_df((0.05, 0.95))
+        else:
+            pred_conf_int = pd.DataFrame(model.conf_interval, columns=['clean_usage_0.05', 'clean_usage_0.95'])
+
+        # Setting up variables for csv output
+
+        contract_location_id = [id for i in range(val_size + forecast_period)]
 
         period_list = pd.date_range(
             series.end_time()
             - dateutil.relativedelta.relativedelta(
-                months=len(pred_val)
-            ),  # change 5 to length of validation set
+                months=val_size
+            ),
             series.end_time()
-            + dateutil.relativedelta.relativedelta(months=model.pred_interval),
+            + dateutil.relativedelta.relativedelta(months=forecast_period),
             freq="M",
-        ).tolist()  # change 12 to input value
+        ).tolist() 
 
         usage = filter_df.loc[
             (filter_df["period_clean"] >= min(period_list))
@@ -188,29 +198,30 @@ def get_forecast_metrics(
             "clean_usage",
         ].tolist()
 
-        usage = usage + [0 for i in range(12)]
+        usage = usage + [0 for i in range(forecast_period)]
 
         client_forecast_values = get_client_metrics(filter_df)
-        client_forecast = [client_forecast_values[1] for i in range(5)] + [
-            client_forecast_values[0] for i in range(12)
+        client_forecast = [client_forecast_values[1] for i in range(val_size)] + [
+            client_forecast_values[0] for i in range(forecast_period)
         ]
 
         capstone_forecast = (
-            pred_val.mean().pd_series().tolist()
-            + future_pred.mean().pd_series().tolist()
+            pred_val.pd_series().tolist()
+            + future_pred.pd_series().tolist()
         )
-        best_model = [model_name for i in range(17)]
+        best_model = [model_name for i in range(val_size + forecast_period)]
 
         client_mdape = [
             mape(
-                TimeSeries.from_values(np.asarray(usage[0:5])),
-                TimeSeries.from_values(np.asarray(client_forecast[0:5])),
+                TimeSeries.from_values(np.asarray(usage[0:val_size])),
+                TimeSeries.from_values(np.asarray(client_forecast[0:val_size])),
                 reduction=np.median,
             )
-            for i in range(5)
-        ] + [0 for i in range(12)]
-        capstone_mdape = [pred_score for i in range(5)] + [
-            0 for i in range(12)
+            for i in range(val_size)
+        ] + [0 for i in range(forecast_period)]
+
+        capstone_mdape = [pred_score for i in range(val_size)] + [
+            0 for i in range(forecast_period)
         ]
 
         low_confidence_int = (
@@ -299,14 +310,12 @@ if __name__ == "__main__":
     conn._sql_connection()
     results_df = conn._execute_sql_statement(sql_string)
     results_df["period"] = results_df["NewPeriod"].astype(str)
-    # print(results_df)
     df = clean_data(results_df)
-    
-    #df = df[df["has_zero_usage_values"] == 0]
+    df = df[df["has_zero_usage_values"] == 0]
     
     # df.to_csv('cleaned_database.csv')
     unique_clocid = df["contractLocationID"].unique().tolist()
-
+    
     output = get_forecast_metrics(unique_clocid, df, int(args.p))
     # print(output)
     time_stamp = datetime.now() 

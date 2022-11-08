@@ -93,13 +93,20 @@ def clean_data(df):
         is_seasonal, mseas = seasonality_check(ts)
 
         y = np.asarray(df_reindex['clean_usage'])
-        n_diff = pmd.arima.ndiffs(y, alpha=ALPHA, test='kpss', max_d=2)
-        #n_adf = pmd.arima.ndiffs(y, alpha=ALPHA, test='adf', max_d=2)
-        #n_diff = max(n_adf, n_kpss)
+
+        try:
+            n_kpss = pmd.arima.ndiffs(y, alpha=ALPHA, test='kpss', max_d=2)
+            n_adf = pmd.arima.ndiffs(y, alpha=ALPHA, test='adf', max_d=2)
+            n_diff = max(n_adf, n_kpss)
         
-        #n_ocsb = pmd.arima.OCSBTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y)
-        ns_diff = max(pmd.arima.CHTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y), is_seasonal*1)
-        #ns_diff = max(n_ocsb, n_ch, is_seasonal * 1)
+            n_ocsb = pmd.arima.OCSBTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y)
+            ns_ch = pmd.arima.CHTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y)
+            ns_diff = max(n_ocsb, n_ch, is_seasonal * 1)
+
+        except:
+
+            n_diff = pmd.arima.ndiffs(y, alpha=ALPHA, test='kpss', max_d=2)
+            ns_diff = max(pmd.arima.CHTest(m=max(4,mseas)).estimate_seasonal_differencing_term(y), is_seasonal*1)
 
         df_reindex['seasonality_flag']= is_seasonal
         df_reindex['number_seasons']= mseas
@@ -123,7 +130,7 @@ def clean_data(df):
 
         out_df = pd.concat([out_df, clean_df])
         
-        #print("%d Contract Location ID's have been cleaned and added" % count)
+        print("%d Contract Location ID's have been cleaned and added" % count)
         count = count + 1
     return out_df
 
