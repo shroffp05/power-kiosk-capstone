@@ -11,8 +11,9 @@ import pyodbc
 import sqlalchemy as sal
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
+import re 
 
-driver = pyodbc.drivers()[0]
+driver = [x for x in pyodbc.drivers() if re.search("ODBC Driver.*", x) is not None][0]
 
 
 @dataclass
