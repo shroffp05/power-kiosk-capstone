@@ -13,6 +13,7 @@ import warnings
 
 arr = np.array([(1, 10), (2, 20), (3, 30), (4, 40), (5, 50)])
 #metrics = np.array([("1234", "1/1/2020", 1000, 20, 10, "arima", 12.3, 2.2, "null")])
+# flake8: noqa
 
 def model_check(mod_name: str, series: TimeSeries, seasonal_period: int) -> bool:
 
@@ -22,7 +23,7 @@ def model_check(mod_name: str, series: TimeSeries, seasonal_period: int) -> bool
         else:
             return True 
     elif mod_name == 'exponential':
-        if seasonal_period < 2:
+        if int((series.n_timesteps -1)*0.9) < 2*seasonal_period:
             return False 
         else:
             return True 
@@ -49,7 +50,7 @@ class modeling:
 
     series: TimeSeries.from_dataframe(pd.DataFrame(data=arr))
     models_dict: Dict[str, str] = field(
-        default_factory=lambda: {"arima": pmd.AutoARIMA(), "exponential": ExponentialSmoothing()}
+        default_factory=lambda: {"arima": pmd.AutoARIMA(), "exponential": ExponentialSmoothing(initialization_method=None)}
     )
     model_hyperparameters: Dict[str, str] = field(
         default_factory=lambda: {
@@ -58,7 +59,10 @@ class modeling:
                         'holidays_prior_scale':[0.1,0.2],
                         'n_changepoints' : [100,150]},
             "exponential": {'trend': [ModelMode.ADDITIVE, ModelMode.MULTIPLICATIVE, ModelMode.NONE],
-                            'seasonal': [SeasonalityMode.ADDITIVE, SeasonalityMode.MULTIPLICATIVE, SeasonalityMode.NONE]}
+                            'seasonal': [SeasonalityMode.ADDITIVE, SeasonalityMode.MULTIPLICATIVE, SeasonalityMode.NONE]
+                            
+
+                            }
         }
         
     )
@@ -89,7 +93,7 @@ class modeling:
                                 max_order=5, stationary=False,
                                 information_criterion="bic", alpha=0.05,
                                 test="kpss", seasonal_test="ch", stepwise=True,
-                                suppress_warnings=True, error_action="trace", trace=False, with_intercept="auto"
+                                suppress_warnings=True, error_action="trace", trace=True, with_intercept="auto"
                             )
 
                         train, val = train_test_split(self.series, 0.9, pandas=True)
@@ -101,6 +105,15 @@ class modeling:
                     else:
                                 
                         param_grid = self.model_hyperparameters[mod]
+                        if(mod=='exponential'):
+                            param_grid['seasonal_periods'] = [self.ts_attributes[3]]
+                        
+                        if((mod=='exponential') and (self.ts_attributes[2]==False) ):
+                            param_grid['seasonal'] = [SeasonalityMode.NONE]
+                        
+                        if((mod=='exponential') and (self.ts_attributes[0]== 0) ):
+                            param_grid['trend'] = [ModelMode.NONE]
+                        
 
                         model, params, score = mod_instantiation.gridsearch(
                             parameters=param_grid,
@@ -132,8 +145,19 @@ class modeling:
                             }
                     
 
+        if len(self.model_metrics)==0:
+
+            self.future_predictions = None
+            self.model_name = None
+            self.pred_val = None
+            self.pred_score = None
+            self.val_size = None
+            self.conf_interval = None
+            self.predictions_conf_interval = None
+        else:
+            self.future_predictions, self.model_name, self.pred_val, self.pred_score, self.val_size, self.conf_interval, self.predictions_conf_interval = self._output_values()
+
         
-        self.future_predictions, self.model_name, self.pred_val, self.pred_score, self.val_size, self.conf_interval, self.predictions_conf_interval = self._output_values()
 
     def _output_values(self):
 
