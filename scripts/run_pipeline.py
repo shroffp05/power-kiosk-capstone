@@ -328,11 +328,11 @@ if __name__ == "__main__":
     df = clean_data(results_df)
     df = df[df["has_zero_usage_values"] == 0]
     
-    df.to_csv('cleaned_database_711.csv')
+    # df.to_csv('cleaned_database_711.csv')
     t_start = datetime.now()
     #df = pd.read_csv('cleaned_database_711.csv')
 
-    df = df[df['series_len']>=12]
+    df = df[df['series_len']>=36]
     df = df[(df.contractLocationID != '588f179570c539450170d5375dcf0bdf') & (df.contractLocationID !='588f17956909297e01691632b1100718') 
     &(df.contractLocationID != '588f179570c539450170d539e92e0cc8')&(df.contractLocationID != '588f179570f3ee190170f783f7880304')]
     #df = df[df[df['contractLocationID'] == '588f179570c539450170d539e8db0cc7'].index[0]:]
@@ -342,7 +342,7 @@ if __name__ == "__main__":
   
     time_stamp = datetime.now() 
     output.to_csv("results/predictions-{}.csv".format(time_stamp))
-    #output.to_csv('predictions_711.csv')
+    #output.to_csv('predictions_11_11.csv')
     t_end = datetime.now()
     print('TOTAL TIME TAKEN TO FINISH:')
     print(t_end-t_start)

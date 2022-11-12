@@ -50,14 +50,14 @@ class modeling:
 
     series: TimeSeries.from_dataframe(pd.DataFrame(data=arr))
     models_dict: Dict[str, str] = field(
-        default_factory=lambda: {"arima": pmd.AutoARIMA(), "exponential": ExponentialSmoothing(initialization_method=None)}
+        default_factory=lambda: {"arima": pmd.AutoARIMA(), "exponential": ExponentialSmoothing(initialization_method=None),'prophet':Prophet()}
     )
     model_hyperparameters: Dict[str, str] = field(
         default_factory=lambda: {
             "prophet": {'seasonality_mode':('multiplicative','additive'),
-                        'changepoint_prior_scale':[0.1,0.2],
-                        'holidays_prior_scale':[0.1,0.2],
-                        'n_changepoints' : [100,150]},
+                        'changepoint_prior_scale':[0.1],
+                        
+                        'n_changepoints' : [100]},
             "exponential": {'trend': [ModelMode.ADDITIVE, ModelMode.MULTIPLICATIVE, ModelMode.NONE],
                             'seasonal': [SeasonalityMode.ADDITIVE, SeasonalityMode.MULTIPLICATIVE, SeasonalityMode.NONE]
                             
@@ -110,9 +110,14 @@ class modeling:
                         
                         if((mod=='exponential') and (self.ts_attributes[2]==False) ):
                             param_grid['seasonal'] = [SeasonalityMode.NONE]
+                        elif((mod=='exponential') and (self.ts_attributes[2]==True) ):
+                            param_grid['seasonal'] = [SeasonalityMode.ADDITIVE, SeasonalityMode.MULTIPLICATIVE]
                         
-                        if((mod=='exponential') and (self.ts_attributes[0]== 0) ):
+                        if((mod=='exponential') and (self.ts_attributes[0]== 0)):
                             param_grid['trend'] = [ModelMode.NONE]
+                        elif((mod=='exponential') and (self.ts_attributes[0]!= 0)):
+                            param_grid['trend'] = [ModelMode.ADDITIVE, ModelMode.MULTIPLICATIVE]
+        
                         
 
                         model, params, score = mod_instantiation.gridsearch(
@@ -136,7 +141,7 @@ class modeling:
                         for k, v in self.model_metrics.items():
                             current_val = self.model_metrics[k]["score"]
 
-                        if current_val < score:
+                        if current_val > score:
                             self.model_metrics = {}
                             self.model_metrics[mod] = {
                                 "model": model,
