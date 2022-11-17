@@ -302,14 +302,24 @@ if __name__ == "__main__":
         """,
     )
 
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=36,
+        help="""
+            Type the minimum number of months the contract location's should have for training a model. Defaults to 36.
+        """
+        )
+
     args = parser.parse_args()
 
     print(
         """Arguments Passed:
                 - Contract Location ID : {}
                 - Number of forecast periods: {}
+                - Minimum number of months: {}
             """.format(
-            args.cl, args.p
+            args.cl, args.p, args.n
         )
     )
 
@@ -332,7 +342,7 @@ if __name__ == "__main__":
     t_start = datetime.now()
     #df = pd.read_csv('cleaned_database_711.csv')
 
-    df = df[df['series_len']>=36]
+    df = df[df['series_len']>=int(args.n)]
     df = df[(df.contractLocationID != '588f179570c539450170d5375dcf0bdf') & (df.contractLocationID !='588f17956909297e01691632b1100718') 
     &(df.contractLocationID != '588f179570c539450170d539e92e0cc8')&(df.contractLocationID != '588f179570f3ee190170f783f7880304')]
     #df = df[df[df['contractLocationID'] == '588f179570c539450170d539e8db0cc7'].index[0]:]
