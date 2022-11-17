@@ -94,5 +94,5 @@ target/
 outputs
 
 # Folders
-logging/
-results/
+.csv
+.txt
