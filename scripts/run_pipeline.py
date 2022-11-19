@@ -21,7 +21,7 @@ from modelling import modeling  # noqa: E402
 from sql_connection import connect_to_sql  # noqa: E402
 
 pd.options.mode.chained_assignment = None  # default='warn'
-
+# flake8: noqa
 
 def set_param(user_arg: str) -> dict:
 
@@ -94,25 +94,25 @@ def get_client_metrics(df: pd.DataFrame) -> list:
     the average usage of the contractLocation over the past year as well as the year before
     """
 
-    end_date = df["period_clean"].max().to_pydatetime()
+    end_date = pd.to_datetime(df["period_clean"]).max().to_pydatetime()
     start_date = end_date - dateutil.relativedelta.relativedelta(months=12)
 
     client_df = df.loc[
-        (df["period_clean"] >= start_date) & (df["period_clean"] <= end_date),
+        (pd.to_datetime(df["period_clean"]) >= start_date) & (pd.to_datetime(df["period_clean"]) <= end_date),
         :,
     ]
 
     print("Start Date: {}".format(start_date))
     print("End Date: {}".format(end_date))
 
-    end_date_2 = df[
+    end_date_2 = pd.to_datetime(df[
         "period_clean"
-    ].max().to_pydatetime() - dateutil.relativedelta.relativedelta(months=12)
+    ]).max().to_pydatetime() - dateutil.relativedelta.relativedelta(months=12)
     start_date_2 = end_date_2 - dateutil.relativedelta.relativedelta(months=12)
 
     client_df_2 = df.loc[
-        (df["period_clean"] >= start_date_2)
-        & (df["period_clean"] <= end_date_2),
+        (pd.to_datetime(df["period_clean"]) >= start_date_2)
+        & (pd.to_datetime(df["period_clean"]) <= end_date_2),
         :,
     ]
 
@@ -161,12 +161,21 @@ def get_forecast_metrics(
         model = modeling(
             series=series, contractLocationID=id, pred_interval=forecast_period, ts_attributes=(n_diff, ns_diff, seasonality, no_of_seasons)
         )
+
         model._modeling()
+
+       
+
         future_pred = model.future_predictions
         model_name = model.model_name
         pred_val = model.pred_val
         pred_score = model.pred_score
         val_size = model.val_size
+
+        if all([future_pred==None, model_name == None, pred_val == None, pred_score == None, val_size == None]):
+            count = count + 1
+            continue
+        
 
         if len(model.predictions_conf_interval) == 0:
             future_conf_int = future_pred.quantiles_df((0.05, 0.95))
@@ -192,9 +201,10 @@ def get_forecast_metrics(
             freq="M",
         ).tolist() 
 
+
         usage = filter_df.loc[
-            (filter_df["period_clean"] >= min(period_list))
-            & (filter_df["period_clean"] <= max(period_list)),
+            (pd.to_datetime(filter_df["period_clean"]) >= min(period_list))
+            & (pd.to_datetime(filter_df["period_clean"]) <= max(period_list)),
             "clean_usage",
         ].tolist()
 
@@ -205,10 +215,15 @@ def get_forecast_metrics(
             client_forecast_values[0] for i in range(forecast_period)
         ]
 
-        capstone_forecast = (
-            pred_val.pd_series().tolist()
-            + future_pred.pd_series().tolist()
-        )
+        if model_name == 'arima':
+            capstone_forecast = (pred_val.pd_series().tolist()
+            + future_pred.pd_series().tolist())
+            
+        else:
+            capstone_forecast = (
+                pred_val.mean().pd_series().tolist()
+                + future_pred.mean().pd_series().tolist()
+            )
         best_model = [model_name for i in range(val_size + forecast_period)]
 
         client_mdape = [
@@ -287,14 +302,24 @@ if __name__ == "__main__":
         """,
     )
 
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=36,
+        help="""
+            Type the minimum number of months the contract location's should have for training a model. Defaults to 36.
+        """
+        )
+
     args = parser.parse_args()
 
     print(
         """Arguments Passed:
                 - Contract Location ID : {}
                 - Number of forecast periods: {}
+                - Minimum number of months: {}
             """.format(
-            args.cl, args.p
+            args.cl, args.p, args.n
         )
     )
 
@@ -313,11 +338,22 @@ if __name__ == "__main__":
     df = clean_data(results_df)
     df = df[df["has_zero_usage_values"] == 0]
     
-    # df.to_csv('cleaned_database.csv')
+    # df.to_csv('cleaned_database_711.csv')
+    t_start = datetime.now()
+    #df = pd.read_csv('cleaned_database_711.csv')
+
+    df = df[df['series_len']>=int(args.n)]
+    df = df[(df.contractLocationID != '588f179570c539450170d5375dcf0bdf') & (df.contractLocationID !='588f17956909297e01691632b1100718') 
+    &(df.contractLocationID != '588f179570c539450170d539e92e0cc8')&(df.contractLocationID != '588f179570f3ee190170f783f7880304')]
+    #df = df[df[df['contractLocationID'] == '588f179570c539450170d539e8db0cc7'].index[0]:]
     unique_clocid = df["contractLocationID"].unique().tolist()
-    
     output = get_forecast_metrics(unique_clocid, df, int(args.p))
-    # print(output)
+    #output = get_forecast_metrics(unique_clocid, df,12)
+  
     time_stamp = datetime.now() 
     output.to_csv("results/predictions-{}.csv".format(time_stamp))
+    #output.to_csv('predictions_11_11.csv')
+    t_end = datetime.now()
+    print('TOTAL TIME TAKEN TO FINISH:')
+    print(t_end-t_start)
     
