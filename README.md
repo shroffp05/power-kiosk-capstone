@@ -75,18 +75,28 @@ The pipeline takes 3 inputs:
 
 - Single contract location ID
 ```bash 
-python script/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23
+python scripts/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23
 ```
 
 - Multiple contract location IDs
 ```bash
-python script/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23,0219a6756d3e439d84f5bb5678f40499,07e2ba4b87b04684b4ea75c5654d354d,0d674bb909474caeb24cccc0d051df92
+python scripts/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23,0219a6756d3e439d84f5bb5678f40499,07e2ba4b87b04684b4ea75c5654d354d,0d674bb909474caeb24cccc0d051df92
 ```
 **Note there is no space between two contract location IDs in the input. 
 
 - All contract location IDs
 ```bash
-python script/run_pipeline.py --cl all
+python scripts/run_pipeline.py --cl all
+```
+
+- Changing the number of periods to forecast from 12 to 5 
+```bash 
+python scripts/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23 --p 5
+```
+
+- Changing the minimum number of months required from 36 to 30
+```bash 
+python scripts/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23 --n 30
 ```
 
 ## Run Streamlit to visualize output
