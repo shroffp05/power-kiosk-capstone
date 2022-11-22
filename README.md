@@ -71,6 +71,23 @@ The pipeline takes 3 inputs:
 
 - `--n`: Minimum number of months a contract location needs to have in order for it to be part of the model. Default value is set to be 36 months. 
 
+### Examples 
+
+- Single contract location ID
+```bash 
+python script/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23
+```
+
+- Multiple contract location IDs
+```bash
+python script/run_pipeline.py --cl 0082c329a35944de939acdfb5975dd23,0219a6756d3e439d84f5bb5678f40499,07e2ba4b87b04684b4ea75c5654d354d,0d674bb909474caeb24cccc0d051df92
+```
+**Note there is no space between two contract location IDs in the input. 
+
+- All contract location IDs
+```bash
+python script/run_pipeline.py --cl all
+```
 
 ## Run Streamlit to visualize output
 
