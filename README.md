@@ -46,6 +46,9 @@ conda activate power_kiosk
 make install
 ```
 
+## Install ODBC Driver 
+To connect your MSSQL Database with Python follow the instructions listed [here](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16)
+
 ## Run the entire pipeline
 To run the entire pipeline, type:
 ```bash
