@@ -51,9 +51,24 @@ To connect your MSSQL Database with Python follow the instructions listed [here]
 
 ## Run the entire pipeline
 To run the entire pipeline, type:
-```bash
 
+1. If running from the base folder
+```bash
+python scripts/run_pipeline.py --cl <contract location id(s)> 
 ```
+
+2. If running from scripts folder 
+```bash
+python run_pipeline.py --cl <contract location id(s)>
+```
+
+### Important details about running the pipeline
+
+The pipeline takes 3 inputs:
+a. `--cl`: A single contract location ID, a list of contract location IDs (comma separated, with no space) or the keyword "all" for all contract location IDs.
+b. `--p`: Number of periods or months you want the forecast for. Default value is set to be 12, which means the output of the pipeline will give you 12 months forecast into the future for contract location IDs in the input.
+c. `--n`: Minimum number of months a contract location needs to have in order for it to be part of the model. Default value is set to be 36 months. 
+
 
 ## Run Streamlit to visualize output
 
