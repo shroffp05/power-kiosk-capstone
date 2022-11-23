@@ -344,7 +344,7 @@ if __name__ == "__main__":
 
     df = df[df['series_len']>=int(args.n)]
     df = df[(df.contractLocationID != '588f179570c539450170d5375dcf0bdf') & (df.contractLocationID !='588f17956909297e01691632b1100718') 
-    &(df.contractLocationID != '588f179570c539450170d539e92e0cc8')&(df.contractLocationID != '588f179570f3ee190170f783f7880304')]
+    &(df.contractLocationID != '588f179570c539450170d539e92e0cc8')&(df.contractLocationID != '588f179570f3ee190170f783f7880304')&(df.contractLocationID != '58464f00667bb4050166a3034b4c0795')&(df.contractLocationID != 'f24bfe43ba0b4bc5a1e01db7b37827cf')]
     #df = df[df[df['contractLocationID'] == '588f179570c539450170d539e8db0cc7'].index[0]:]
     unique_clocid = df["contractLocationID"].unique().tolist()
     output = get_forecast_metrics(unique_clocid, df, int(args.p))
