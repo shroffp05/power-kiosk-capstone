@@ -94,5 +94,5 @@ target/
 outputs
 
 # Folders
-.csv
-.txt
+*.csv
+*.log
