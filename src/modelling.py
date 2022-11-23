@@ -31,7 +31,9 @@ def extract_parameters(params: str):
     parameters = params[8:]
     values = parameters.split(' ')
     #print(parameters, values, param_type)
-
+    if((len(values)==1) & ('intercept' not in values)):
+        return [],[],False 
+      
     if 'intercept' in values:
         intercept = True 
     else:
@@ -90,14 +92,13 @@ class modeling:
 
     series: TimeSeries.from_dataframe(pd.DataFrame(data=arr))
     models_dict: Dict[str, str] = field(
-        default_factory=lambda: {"arima": pmd.AutoARIMA(), "exponential": ExponentialSmoothing(initialization_method=None)}
+        default_factory=lambda: {"arima": pmd.AutoARIMA(), "exponential": ExponentialSmoothing(initialization_method=None),'prophet':Prophet()}
     )
     model_hyperparameters: Dict[str, str] = field(
         default_factory=lambda: {
             "prophet": {'seasonality_mode':('multiplicative','additive'),
-                        'changepoint_prior_scale':[0.1,0.2],
-                        'holidays_prior_scale':[0.1,0.2],
-                        'n_changepoints' : [100,150]},
+                        'changepoint_prior_scale':[0.1],
+                        'n_changepoints' : [100]},
             "exponential": {'trend': [ModelMode.ADDITIVE, ModelMode.MULTIPLICATIVE, ModelMode.NONE],
                             'seasonal': [SeasonalityMode.ADDITIVE, SeasonalityMode.MULTIPLICATIVE, SeasonalityMode.NONE]
                             
