@@ -39,11 +39,21 @@
 ```
 
 ## Set up the environment
+
+If running on MacOS
 Create and activate conda environment
 ```bash
 make conda_create
 conda activate power_kiosk
 make install
+```
+
+If running on Windows
+```bash
+conda create --name power_kiosk python=3.9 pip
+conda activate power_kiosk
+conda install -c conda-forge -c pytorch u8darts-all
+pip install -r requirements.txt 
 ```
 
 ## Install ODBC Driver 
