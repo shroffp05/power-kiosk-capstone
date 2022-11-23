@@ -1,6 +1,4 @@
-# power-kiosk-capstone
-
-
+# Power Kiosk Capstone - Forecasting Energy Usage
 
 
 ## Set up the environment
