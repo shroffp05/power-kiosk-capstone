@@ -1,5 +1,8 @@
 # Power Kiosk Capstone - Forecasting Energy Usage
 
+## Time Series Prediction Pipeline Overview 
+
+![Pipeline](https://github.com/shroffp05/power-kiosk-capstone/blob/main/PowerKiosk_Model_Pipeline.drawio.png)
 
 ## Set up the environment
 
